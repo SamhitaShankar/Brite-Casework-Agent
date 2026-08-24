@@ -58,8 +58,7 @@ class GeminiTriageService:
         recent_events = events[-3:] if events else []
 
         prompt = f"""You are the Calder County Automated Casework Assistant.
-Draft a concise, professional casework triage note according to Policy ACA-2026/1.
-This is a PROPOSAL for caseworker review (Section 2.4).
+Review the following case details and draft a concise, professional casework triage summary.
 
 Resident Reference: {referral.get('resident_ref')}
 Primary Applicant: {resident_name}
@@ -74,10 +73,12 @@ Applicable Authority Rule: {policy_section}
 Recent Case History:
 {json_format_events(recent_events)}
 
-Please provide your response strictly as a JSON object with two keys:
-1. "summary": A concise summary of the situation (2-3 clear sentences).
-2. "next_steps": Recommended next steps for the caseworker (clear bullet points).
-Format in a crisp, objective, administrative tone. Do not include extra markdown formatting.
+OUTPUT REQUIREMENTS:
+Please provide your response strictly as a JSON object with EXACTLY two keys:
+1. "summary": A concise summary of the situation (2-3 clear sentences max). DO NOT repeat the prompt, preamble, or title.
+2. "next_steps": Recommended next steps for the caseworker (clear bullet points). DO NOT repeat the preamble or title.
+Format in a crisp, objective, administrative tone. DO NOT include markdown formatting outside of the bullet points.
+"""
 
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY environment variable is not configured in the server environment.")
@@ -100,7 +101,7 @@ Format in a crisp, objective, administrative tone. Do not include extra markdown
                         "contents": [{"parts": [{"text": prompt}]}],
                         "generationConfig": {
                             "temperature": 0.2,
-                            "maxOutputTokens": 400,
+                            "maxOutputTokens": 1000,
                             "responseMimeType": "application/json"
                         }
                     }).encode("utf-8")
