@@ -90,9 +90,20 @@ Please provide your response strictly as a JSON object with EXACTLY two keys:
 Format in a crisp, objective, administrative tone. DO NOT include markdown formatting outside of the bullet points.
 """
 
-        if not self.api_key:
-            raise RuntimeError("GEMINI_API_KEY environment variable is not configured in the server environment.")
+        # Dynamically fetch API key at call time to prevent caching issues
+        current_api_key = self.api_key or os.getenv("GEMINI_API_KEY")
+        if not current_api_key:
+            try:
+                with open(".env.local", "r") as f:
+                    for line in f:
+                        if line.startswith("GEMINI_API_KEY="):
+                            current_api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+            except Exception:
+                pass
 
+        if not current_api_key:
+            raise RuntimeError("GEMINI_API_KEY environment variable is not configured in the server environment.")
         full_text = ""
         model_used = "agent-flash-latest"
         
@@ -106,7 +117,7 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
         for m in candidate_models:
             for attempt in range(2):
                 try:
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.api_key}"
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={current_api_key}"
                     req_data = json.dumps({
                         "contents": [{"parts": [{"text": prompt}]}],
                         "generationConfig": {
