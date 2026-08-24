@@ -94,13 +94,16 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
         current_api_key = self.api_key or os.getenv("GEMINI_API_KEY")
         if not current_api_key:
             try:
-                with open(".env.local", "r") as f:
+                import os
+                root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                env_path = os.path.join(root_dir, ".env.local")
+                with open(env_path, "r") as f:
                     for line in f:
                         if line.startswith("GEMINI_API_KEY="):
                             current_api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
                             break
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to read .env.local: {e}")
 
         if not current_api_key:
             raise RuntimeError("GEMINI_API_KEY environment variable is not configured in the server environment.")
@@ -111,6 +114,7 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
         import urllib.request
         import json
         import time
+        import asyncio
 
         candidate_models = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-pro-latest"]
 
@@ -122,23 +126,29 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
                         "contents": [{"parts": [{"text": prompt}]}],
                         "generationConfig": {
                             "temperature": 0.2,
-                            "maxOutputTokens": 1000,
+                            "maxOutputTokens": 4096,
                             "responseMimeType": "application/json"
                         }
                     }).encode("utf-8")
                     req = urllib.request.Request(url, data=req_data, headers={"Content-Type": "application/json"})
-                    with urllib.request.urlopen(req, timeout=10) as resp:
-                        res_json = json.loads(resp.read().decode("utf-8"))
-                        candidates = res_json.get("candidates", [])
-                        if candidates:
-                            parts = candidates[0].get("content", {}).get("parts", [])
-                            if parts:
-                                full_text = parts[0].get("text", "").strip()
-                                model_used = m
-                                break
+                    
+                    def do_request():
+                        with urllib.request.urlopen(req, timeout=60) as resp:
+                            return resp.read()
+                            
+                    resp_data = await asyncio.to_thread(do_request)
+                    res_json = json.loads(resp_data.decode("utf-8"))
+                    
+                    candidates = res_json.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            full_text = parts[0].get("text", "").strip()
+                            model_used = m
+                            break
                 except Exception as e:
                     logger.warning(f"Attempt {attempt + 1} for model {m} encountered: {e}")
-                    time.sleep(0.5 * (attempt + 1))
+                    await asyncio.sleep(0.5 * (attempt + 1))
             if full_text:
                 break
 

@@ -76,6 +76,10 @@ export function App() {
         setReferrals(refData);
         setSummary(sumData);
         setErrorMessage(null);
+      } else {
+        const refText = await refRes.text();
+        console.error('API Error:', refRes.status, refText);
+        setErrorMessage('Backend is starting or unavailable. Please wait a moment and try refreshing.');
       }
       
       // Add a tiny artificial delay so the user can visually confirm the refresh happened
