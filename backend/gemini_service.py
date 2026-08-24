@@ -112,7 +112,7 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
         import json
         import time
 
-        candidate_models = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"]
+        candidate_models = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-pro-latest"]
 
         for m in candidate_models:
             for attempt in range(2):
