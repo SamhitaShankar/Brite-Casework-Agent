@@ -1,0 +1,104 @@
+{
+  "rules": [
+    {
+      "section": "ACA-2026/1 §3.1",
+      "title": "Change to entitlement, award amount, or eligibility status",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "The requested action involves directly changing entitlement or award amounts. Under Section 3.1, automated entitlement modification is prohibited without supervisor approval.",
+      "human_action": "Supervisor or adjudicating officer decision required to alter entitlement or award.",
+      "match_action": ["alter entitlement", "change entitlement", "modify award amount", "increase award amount", "decrease award amount", "cancel eligibility", "grant new entitlement"]
+    },
+    {
+      "section": "ACA-2026/1 §3.2",
+      "title": "Suspension, termination, or reinstatement of an award",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "The requested action involves suspension/termination of an award. Under Section 3.2, the assistant must not perform or draft preparatory versions of it, and must escalate under Section 4.",
+      "human_action": "Supervisor decision required on suspension/termination investigation.",
+      "match_action": ["suspend", "suspension", "terminate", "termination"]
+    },
+    {
+      "section": "ACA-2026/1 §3.2",
+      "title": "Reinstatement of an award following appeal",
+      "decision": "APPROVAL_REQUIRED",
+      "triage_permitted": true,
+      "rationale_template": "Appeals panel ordered award reinstatement. Under Section 3.2, award reinstatement requires supervisor approval before the system modifies the award. Triage note prepared for supervisor sign-off.",
+      "human_action": "Supervisor sign-off required to reinstate award on resident account.",
+      "match_action": ["supervisor", "note"],
+      "match_summary": ["reinstat", "appeal"]
+    },
+    {
+      "section": "ACA-2026/1 §3.3",
+      "title": "Initiation, alteration, or cancellation of a payment",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "The requested action involves financial transaction execution. Under Section 3.3, automated initiation, alteration, or cancellation of payments is prohibited without explicit supervisor authorization.",
+      "human_action": "Supervisor authorization required for disbursement or cancellation of payments.",
+      "match_action": ["initiate payment", "issue payment", "alter payment", "cancel payment", "stop payment", "release payment"]
+    },
+    {
+      "section": "ACA-2026/1 §3.4",
+      "title": "Change to payment details (bank or card details)",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "The requested action directly requests modification of payment details. Under Section 3.4, automated change is strictly prohibited without supervisor sign-off.",
+      "human_action": "Supervisor approval and validation of resident banking credentials required.",
+      "match_action": ["update payment details", "change payment details", "change bank", "update bank", "change card", "update account details"]
+    },
+    {
+      "section": "ACA-2026/1 §3.5",
+      "title": "Direct communication sent to a resident or third party",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "The requested action involves direct external communication. Under Section 3.5, the automated assistant must not send unreviewed communications to residents or third parties.",
+      "human_action": "Caseworker or supervisor must author and dispatch external correspondence.",
+      "match_action": ["send letter", "send email", "send sms", "notify resident directly", "send communication", "contact resident directly", "notify landlord directly", "notify third party"]
+    },
+    {
+      "section": "ACA-2026/1 §3.6",
+      "title": "Disclosure of resident information outside the Department",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "The requested action involves external data disclosure. Under Section 3.6, disclosure of resident information requires supervisor authorization.",
+      "human_action": "Supervisor and data protection lead sign-off required for external disclosures.",
+      "match_action": ["disclose resident", "share resident data", "external disclosure", "disclose to police", "disclose to landlord"]
+    },
+    {
+      "section": "ACA-2026/1 §3.7",
+      "title": "Creation of record asserting finding of fact on fraud/misrepresentation",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "Referral involves allegations of fraud/misrepresentation. Under Section 3.7, an automated assistant must not assert findings of fact on resident conduct and must escalate.",
+      "human_action": "Escalate to Counter-Fraud lead and supervisor for official adjudication.",
+      "match_action": ["finding", "suspend", "record finding", "conclude", "adjudicate"],
+      "match_any": ["fraud", "misrepresentation"]
+    },
+    {
+      "section": "ACA-2026/1 §3.8",
+      "title": "Action that cannot be reversed by the Department acting alone",
+      "decision": "PROHIBITED",
+      "triage_permitted": false,
+      "rationale_template": "The requested action represents an irreversible legal or administrative step. Under Section 3.8, automated execution is prohibited.",
+      "human_action": "Departmental legal and supervisory determination required.",
+      "match_action": ["irreversible", "permanently delete", "file court proceedings", "notify court"]
+    },
+    {
+      "section": "ACA-2026/1 §2.4",
+      "title": "Draft a triage note for caseworker review",
+      "decision": "ALLOWED",
+      "triage_permitted": true,
+      "rationale_template": "Requested action is permitted under Section 2 as a routine casework proposal. It creates no binding case change until adopted by a caseworker.",
+      "human_action": "Caseworker review and adoption of proposed triage note.",
+      "match_action": ["review award", "record change of address", "draft explanatory note", "record income change", "flag for contact attempt", "review household composition", "draft triage note", "draft triage note for supervisor"]
+    }
+  ],
+  "default_rule": {
+    "section": "ACA-2026/1 §6.1",
+    "title": "Uncertainty Fail-Safe (Treated as Requiring Approval)",
+    "decision": "UNCLEAR",
+    "triage_permitted": false,
+    "rationale_template": "The requested action does not match standard Section 2 permitted categories. Under Section 6.1, where authority is unclear, it is treated as requiring supervisor approval.",
+    "human_action": "Supervisor determination on authority boundary."
+  }
+}
