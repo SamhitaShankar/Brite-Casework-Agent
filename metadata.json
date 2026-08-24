@@ -1,0 +1,6 @@
+{
+  "name": "Brite Casework Agent",
+  "description": "Deterministic policy-governed casework agent with under-18 safeguarding gate, human-in-the-loop controls, and Agent-powered triage generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
