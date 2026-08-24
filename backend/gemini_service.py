@@ -18,6 +18,16 @@ logger = logging.getLogger("brite.gemini_service")
 class GeminiTriageService:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+        if not self.api_key:
+            # Fallback: forcefully read .env.local if environment inheritance failed
+            try:
+                with open(".env.local", "r") as f:
+                    for line in f:
+                        if line.startswith("GEMINI_API_KEY="):
+                            self.api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+            except Exception:
+                pass
         self.client = None
         if self.api_key:
             try:
