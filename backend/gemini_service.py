@@ -91,7 +91,7 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
         import json
         import time
 
-        candidate_models = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-pro-latest"]
+        candidate_models = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"]
 
         for m in candidate_models:
             for attempt in range(2):
@@ -106,7 +106,7 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
                         }
                     }).encode("utf-8")
                     req = urllib.request.Request(url, data=req_data, headers={"Content-Type": "application/json"})
-                    with urllib.request.urlopen(req, timeout=25) as resp:
+                    with urllib.request.urlopen(req, timeout=10) as resp:
                         res_json = json.loads(resp.read().decode("utf-8"))
                         candidates = res_json.get("candidates", [])
                         if candidates:
