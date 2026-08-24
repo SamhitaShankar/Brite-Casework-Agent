@@ -36,8 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5">
           {/* Logo & Operational Identity */}
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-200 dark:border-blue-500/30 flex items-center justify-center">
-              <ShieldAlert className="w-6 h-6" />
+            <div className="p-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
+              <img src="/logo.jpg" alt="BCA Logo" className="w-8 h-8 rounded-full object-cover" />
             </div>
             <div>
               <div className="flex items-center space-x-2 flex-wrap">
