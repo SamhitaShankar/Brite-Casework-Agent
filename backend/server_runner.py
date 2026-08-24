@@ -294,130 +294,138 @@ class CaseworkAPIHandler(BaseHTTPRequestHandler):
         except Exception:
             payload = {}
 
-        with SessionLocal() as db:
-            if path == "/api/reset-demo":
-                from backend.compat import _GLOBAL_STORE
-                if isinstance(_GLOBAL_STORE, list):
-                    _GLOBAL_STORE.clear()
-                count = coordinator.seed_referrals_if_empty(db)
-                return self._send_json(200, {"message": "Database reset to initial overnight state", "referrals_seeded": count})
+        try:
+            with SessionLocal() as db:
+                if path == "/api/reset-demo":
+                    from backend.compat import _GLOBAL_STORE
+                    if isinstance(_GLOBAL_STORE, list):
+                        _GLOBAL_STORE.clear()
+                    count = coordinator.seed_referrals_if_empty(db)
+                    return self._send_json(200, {"message": "Database reset to initial overnight state", "referrals_seeded": count})
 
-            elif path == "/api/referrals/process-all":
-                results = asyncio.run(coordinator.process_all_queue(db))
-                return self._send_json(200, {
-                    "message": "Queue processed",
-                    "processed_count": len(results),
-                    "results": [
-                        {"referral_id": r.referral_id, "disposition": r.workflow_disposition, "decision": r.policy_decision}
-                        for r in results
-                    ],
-                })
+                elif path == "/api/referrals/process-all":
+                    results = asyncio.run(coordinator.process_all_queue(db))
+                    return self._send_json(200, {
+                        "message": "Queue processed",
+                        "processed_count": len(results),
+                        "results": [
+                            {"referral_id": r.referral_id, "disposition": r.workflow_disposition, "decision": r.policy_decision}
+                            for r in results
+                        ],
+                    })
 
-            elif path.startswith("/api/referrals/"):
-                parts = path.split("/")
-                # Pattern: /api/referrals/{id}/{action}
-                if len(parts) == 5:
-                    referral_id = parts[3]
-                    action = parts[4]
+                elif path.startswith("/api/referrals/"):
+                    parts = path.split("/")
+                    # Pattern: /api/referrals/{id}/{action}
+                    if len(parts) == 5:
+                        referral_id = parts[3]
+                        action = parts[4]
 
-                    if action == "process":
-                        ref = asyncio.run(coordinator.process_referral(referral_id, db))
-                        return self._send_json(200, {
-                            "message": "Processed successfully",
-                            "referral_id": ref.referral_id,
-                            "disposition": ref.workflow_disposition,
-                        })
+                        if action == "process":
+                            ref = asyncio.run(coordinator.process_referral(referral_id, db))
+                            return self._send_json(200, {
+                                "message": "Processed successfully",
+                                "referral_id": ref.referral_id,
+                                "disposition": ref.workflow_disposition,
+                            })
 
-                    elif action == "resume":
-                        ref = asyncio.run(coordinator.resume_referral(referral_id, db))
-                        return self._send_json(200, {
-                            "message": "Resumed successfully",
-                            "referral_id": ref.referral_id,
-                            "disposition": ref.workflow_disposition,
-                        })
+                        elif action == "resume":
+                            ref = asyncio.run(coordinator.resume_referral(referral_id, db))
+                            return self._send_json(200, {
+                                "message": "Resumed successfully",
+                                "referral_id": ref.referral_id,
+                                "disposition": ref.workflow_disposition,
+                            })
 
-                    elif action == "approve":
-                        ref = db.query(ReferralModel).filter(ReferralModel.referral_id == referral_id).first()
-                        if not ref or not ref.approval_request:
-                            return self._send_json(404, {"error": "Approval request not found"})
+                        elif action == "approve":
+                            ref = db.query(ReferralModel).filter(ReferralModel.referral_id == referral_id).first()
+                            if not ref or not ref.approval_request:
+                                return self._send_json(404, {"error": "Approval request not found"})
 
-                        if ref.approval_request.status != "PENDING":
-                            return self._send_json(400, {"error": f"Cannot approve: status is '{ref.approval_request.status}'"})
+                            if ref.approval_request.status != "PENDING":
+                                return self._send_json(400, {"error": f"Cannot approve: status is '{ref.approval_request.status}'"})
 
-                        if ref.processing_state != ProcessingState.AWAITING_APPROVAL.value:
-                            return self._send_json(400, {"error": f"Cannot approve: state is '{ref.processing_state}'"})
+                            if ref.processing_state != ProcessingState.AWAITING_APPROVAL.value:
+                                return self._send_json(400, {"error": f"Cannot approve: state is '{ref.processing_state}'"})
 
-                        if ref.has_under_18 or ref.policy_decision == "HANDOFF_REQUIRED":
-                            return self._send_json(403, {"error": "Safety Invariant Violation: Minor in household. Must remain in handoff."})
+                            if ref.has_under_18 or ref.policy_decision == "HANDOFF_REQUIRED":
+                                return self._send_json(403, {"error": "Safety Invariant Violation: Minor in household. Must remain in handoff."})
 
-                        valid_sup = (payload.get("supervisor_id") or "SUP-01").strip()
-                        valid_notes = (payload.get("decision_notes") or "Approved by supervisor").strip()
+                            valid_sup = (payload.get("supervisor_id") or "SUP-01").strip()
+                            valid_notes = (payload.get("decision_notes") or "Approved by supervisor").strip()
 
-                        req = ref.approval_request
-                        req.status = "APPROVED"
-                        req.decided_at = datetime.utcnow()
-                        req.decision_notes = valid_notes
-                        req.supervisor_id = valid_sup
+                            req = ref.approval_request
+                            req.status = "APPROVED"
+                            req.decided_at = datetime.utcnow()
+                            req.decision_notes = valid_notes
+                            req.supervisor_id = valid_sup
 
-                        ref.workflow_disposition = WorkflowDisposition.COMPLETED.value
-                        ref.processing_state = ProcessingState.COMPLETED.value
+                            ref.workflow_disposition = WorkflowDisposition.COMPLETED.value
+                            ref.processing_state = ProcessingState.COMPLETED.value
 
-                        coordinator._log_audit(
-                            db,
-                            referral_id=ref.referral_id,
-                            step_name="SUPERVISOR_ACTION",
-                            event_type="REQUEST_APPROVED",
-                            details={
-                                "supervisor_id": valid_sup,
-                                "decision_notes": valid_notes,
-                                "action": req.requested_action,
-                                "section": req.applicable_section,
-                            },
-                            actor=valid_sup,
-                        )
-                        db.commit()
-                        return self._send_json(200, {"message": "Approval recorded", "referral_id": referral_id, "status": "APPROVED"})
+                            coordinator._log_audit(
+                                db,
+                                referral_id=ref.referral_id,
+                                step_name="SUPERVISOR_ACTION",
+                                event_type="REQUEST_APPROVED",
+                                details={
+                                    "supervisor_id": valid_sup,
+                                    "decision_notes": valid_notes,
+                                    "action": req.requested_action,
+                                    "section": req.applicable_section,
+                                },
+                                actor=valid_sup,
+                            )
+                            db.commit()
+                            return self._send_json(200, {"message": "Approval recorded", "referral_id": referral_id, "status": "APPROVED"})
 
-                    elif action == "reject":
-                        ref = db.query(ReferralModel).filter(ReferralModel.referral_id == referral_id).first()
-                        if not ref or not ref.approval_request:
-                            return self._send_json(404, {"error": "Approval request not found"})
+                        elif action == "reject":
+                            ref = db.query(ReferralModel).filter(ReferralModel.referral_id == referral_id).first()
+                            if not ref or not ref.approval_request:
+                                return self._send_json(404, {"error": "Approval request not found"})
 
-                        if ref.approval_request.status != "PENDING":
-                            return self._send_json(400, {"error": f"Cannot reject: status is '{ref.approval_request.status}'"})
+                            if ref.approval_request.status != "PENDING":
+                                return self._send_json(400, {"error": f"Cannot reject: status is '{ref.approval_request.status}'"})
 
-                        if ref.processing_state != ProcessingState.AWAITING_APPROVAL.value:
-                            return self._send_json(400, {"error": f"Cannot reject: state is '{ref.processing_state}'"})
+                            if ref.processing_state != ProcessingState.AWAITING_APPROVAL.value:
+                                return self._send_json(400, {"error": f"Cannot reject: state is '{ref.processing_state}'"})
 
-                        valid_sup = (payload.get("supervisor_id") or "SUP-01").strip()
-                        valid_notes = (payload.get("decision_notes") or "Rejected by supervisor").strip()
+                            valid_sup = (payload.get("supervisor_id") or "SUP-01").strip()
+                            valid_notes = (payload.get("decision_notes") or "Rejected by supervisor").strip()
 
-                        req = ref.approval_request
-                        req.status = "REJECTED"
-                        req.decided_at = datetime.utcnow()
-                        req.decision_notes = valid_notes
-                        req.supervisor_id = valid_sup
+                            req = ref.approval_request
+                            req.status = "REJECTED"
+                            req.decided_at = datetime.utcnow()
+                            req.decision_notes = valid_notes
+                            req.supervisor_id = valid_sup
 
-                        ref.workflow_disposition = WorkflowDisposition.ESCALATE.value
-                        ref.processing_state = ProcessingState.ESCALATED.value
+                            ref.workflow_disposition = WorkflowDisposition.ESCALATE.value
+                            ref.processing_state = ProcessingState.ESCALATED.value
 
-                        coordinator._log_audit(
-                            db,
-                            referral_id=ref.referral_id,
-                            step_name="SUPERVISOR_ACTION",
-                            event_type="REQUEST_REJECTED",
-                            details={
-                                "supervisor_id": valid_sup,
-                                "decision_notes": valid_notes,
-                                "action": req.requested_action,
-                                "section": req.applicable_section,
-                            },
-                            actor=valid_sup,
-                        )
-                        db.commit()
-                        return self._send_json(200, {"message": "Rejection recorded", "referral_id": referral_id, "status": "REJECTED"})
+                            coordinator._log_audit(
+                                db,
+                                referral_id=ref.referral_id,
+                                step_name="SUPERVISOR_ACTION",
+                                event_type="REQUEST_REJECTED",
+                                details={
+                                    "supervisor_id": valid_sup,
+                                    "decision_notes": valid_notes,
+                                    "action": req.requested_action,
+                                    "section": req.applicable_section,
+                                },
+                                actor=valid_sup,
+                            )
+                            db.commit()
+                            return self._send_json(200, {"message": "Rejection recorded", "referral_id": referral_id, "status": "REJECTED"})
 
-        self._send_json(404, {"error": "Not found", "path": path})
+            self._send_json(404, {"error": "Not found", "path": path})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            try:
+                self._send_json(500, {"error": str(e), "type": type(e).__name__})
+            except Exception:
+                pass
 
 
 def run_server():
