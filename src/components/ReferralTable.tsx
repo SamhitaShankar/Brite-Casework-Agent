@@ -257,25 +257,7 @@ export const ReferralTable: React.FC<ReferralTableProps> = ({
                           <Play className="w-3 h-3" />
                           <span>Run</span>
                         </button>
-                      ) : (
-                        <button
-                          onClick={() => onResumeReferral(item.referral_id)}
-                          disabled={isItemProcessing}
-                          title="Resume and re-evaluate under current policy"
-                          className="px-2 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-md transition-colors inline-flex items-center cursor-pointer"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                        </button>
                       )}
-
-                      <button
-                        onClick={() => onRefreshReferral(item.referral_id)}
-                        disabled={isProcessingAll || isItemProcessing}
-                        title="Refresh this case from database"
-                        className="px-2 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-md transition-colors inline-flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                      </button>
 
                       <button
                         onClick={() => onSelectReferral(item.referral_id)}
