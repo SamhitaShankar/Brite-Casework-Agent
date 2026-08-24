@@ -248,7 +248,7 @@ export const ReferralTable: React.FC<ReferralTableProps> = ({
                     </td>
 
                     <td className="px-4 py-4 whitespace-nowrap text-right text-xs font-medium space-x-1.5">
-                      {item.workflow_disposition === 'PENDING' ? (
+                      {item.workflow_disposition === 'PENDING' && (
                         <button
                           onClick={() => onProcessReferral(item.referral_id)}
                           disabled={isItemProcessing}
