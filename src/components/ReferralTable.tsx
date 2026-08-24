@@ -200,10 +200,14 @@ export const ReferralTable: React.FC<ReferralTableProps> = ({
                         {getUrgencyBadge(item.urgency)}
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-                        {new Date(item.received_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {(() => {
+                          const ds = String(item.received_at);
+                          const utc = ds.endsWith('Z') ? ds : ds + 'Z';
+                          return new Date(utc).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          });
+                        })()}
                       </div>
                     </td>
 

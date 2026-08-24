@@ -41,7 +41,11 @@ function startPythonBackend(): void {
   const cleanup = () => {
     if (pythonProcess) {
       console.log('[FastAPI Backend] Terminating child process on exit...');
-      pythonProcess.kill('SIGTERM');
+      if (process.platform === 'win32' && pythonProcess.pid) {
+        spawn('taskkill', ['/pid', pythonProcess.pid.toString(), '/f', '/t']);
+      } else {
+        pythonProcess.kill('SIGTERM');
+      }
       pythonProcess = null;
     }
   };

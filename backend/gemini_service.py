@@ -116,7 +116,7 @@ Format in a crisp, objective, administrative tone. DO NOT include markdown forma
         import time
         import asyncio
 
-        candidate_models = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-pro-latest"]
+        candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
 
         for m in candidate_models:
             for attempt in range(2):
@@ -178,12 +178,28 @@ def json_format_events(events: List[Dict[str, Any]]) -> str:
 
 def parse_llm_response(text: str) -> tuple[str, str]:
     import json
+    
+    # Strip markdown code blocks if the model wrapped the JSON
+    clean_text = text.strip()
+    if clean_text.startswith("```json"):
+        clean_text = clean_text[7:]
+    elif clean_text.startswith("```"):
+        clean_text = clean_text[3:]
+    if clean_text.endswith("```"):
+        clean_text = clean_text[:-3]
+    clean_text = clean_text.strip()
+
     try:
-        data = json.loads(text)
+        data = json.loads(clean_text)
         summary = data.get("summary", "")
         steps = data.get("next_steps", "")
+        
+        # Models sometimes return steps as a list instead of a string
+        if isinstance(steps, list):
+            steps = "\n".join(f"- {s}" for s in steps)
+            
         if summary and steps:
-            return summary.strip(), steps.strip()
+            return str(summary).strip(), str(steps).strip()
     except Exception:
         pass
 
@@ -192,5 +208,6 @@ def parse_llm_response(text: str) -> tuple[str, str]:
         summary = parts[0].replace("Summary of the Situation", "").replace("1.", "").strip(":\n#* ")
         steps = "Recommended Next Steps" + parts[1]
         return summary, steps
+        
     return text[:200] + "...", text
 

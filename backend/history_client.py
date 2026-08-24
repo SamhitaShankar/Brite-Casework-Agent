@@ -55,9 +55,14 @@ class HistoryServiceClient:
             return {"resident_ref": resident_ref, "events": rec["events"]}
         return None
 
+    _HISTORY_CACHE = None
+
     def _read_local_data(self, resident_ref: str) -> Optional[Dict[str, Any]]:
-        if os.path.exists(DATA_FALLBACK_PATH):
-            with open(DATA_FALLBACK_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return data.get(resident_ref)
-        return None
+        if self.__class__._HISTORY_CACHE is None:
+            if os.path.exists(DATA_FALLBACK_PATH):
+                with open(DATA_FALLBACK_PATH, "r", encoding="utf-8") as f:
+                    self.__class__._HISTORY_CACHE = json.load(f)
+            else:
+                self.__class__._HISTORY_CACHE = {}
+                
+        return self.__class__._HISTORY_CACHE.get(resident_ref)

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ReferralDetail, HouseholdMember, AuditLog } from '../types';
 import {
   X,
@@ -24,7 +24,14 @@ import {
   ShieldAlert,
   ArrowRightCircle,
   HelpCircle,
+  Activity,
 } from 'lucide-react';
+
+const parseUTC = (ds: string | Date | undefined) => {
+  if (!ds) return new Date();
+  const s = String(ds);
+  return new Date(s.endsWith('Z') ? s : s + 'Z');
+};
 
 interface CaseDetailModalProps {
   referral: ReferralDetail | null;
@@ -75,6 +82,14 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
   const [decisionNotes, setDecisionNotes] = useState('');
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+
+  useEffect(() => {
+    if (referral) {
+      setActiveTab('case_overview');
+      setExpandedLogId(null);
+      setShowTechnicalDetails(false);
+    }
+  }, [referral?.referral_id]);
 
   if (!referral) return null;
 
@@ -218,7 +233,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex justify-center items-center p-3 sm:p-5">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="shrink-0 px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 rounded-xl border border-blue-200 dark:border-blue-800/50">
               <FileText className="w-5 h-5" />
@@ -236,7 +251,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Received: {new Date(referral.received_at).toLocaleString()} • Source: {referral.source} • Priority: {referral.urgency}
+                Received: {parseUTC(referral.received_at).toLocaleString()} • Source: {referral.source} • Priority: {referral.urgency}
               </p>
             </div>
           </div>
@@ -250,7 +265,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
         </div>
 
         {/* Operational 5-Point Summary Ribbon */}
-        <div className="px-6 py-3 bg-slate-100/90 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs">
+        <div className="shrink-0 px-6 py-3 bg-slate-100/90 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
               <span className="text-slate-500 dark:text-slate-400 font-semibold">Under-18 Safeguarding:</span>{' '}
@@ -284,7 +299,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
         </div>
 
         {/* Tab Navigation - 4 Non-Overlapping Tabs */}
-        <div className="px-6 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex space-x-2 sm:space-x-6 overflow-x-auto">
+        <div className="shrink-0 px-6 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex space-x-2 sm:space-x-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('case_overview')}
             className={`py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
@@ -687,7 +702,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
                           <span>{ev.title}</span>
                         </span>
                         <span className="text-slate-400 text-[11px] font-mono">
-                          {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          {parseUTC(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </span>
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-300 mb-1">
@@ -716,7 +731,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
 
         {/* Supervisor Sign-Off Controls Footer (When Awaiting Approval) */}
         {referral.approval_request && referral.approval_request.status === 'PENDING' && isAwaitingApproval && (
-          <div className="px-6 py-4 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="shrink-0 px-6 py-4 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600" /> Supervisor Sign-Off Required (Policy ACA-2026/1 §4.1)
@@ -752,7 +767,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
 
         {/* Policy Escalation Footer (No Action Buttons) */}
         {referral.approval_request && referral.approval_request.status === 'PENDING' && isProhibited && (
-          <div className="px-6 py-4 bg-rose-50 dark:bg-rose-950/40 border-t border-rose-200 dark:border-rose-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="shrink-0 px-6 py-4 bg-rose-50 dark:bg-rose-950/40 border-t border-rose-200 dark:border-rose-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="text-xs font-bold text-rose-900 dark:text-rose-300 flex items-center gap-1.5">
                 <AlertOctagon className="w-4 h-4 text-rose-600" /> Policy Escalation Alert (Prohibited Action)
@@ -766,7 +781,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
 
         {/* Read-Only Decision Footer (Approved/Rejected) */}
         {referral.approval_request && referral.approval_request.status !== 'PENDING' && (
-          <div className={`px-6 py-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${
+          <div className={`shrink-0 px-6 py-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${
             referral.approval_request.status === 'APPROVED' 
               ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60'
               : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60'
